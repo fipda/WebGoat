@@ -57,14 +57,20 @@ public class SqlInjectionLesson6a extends AssignmentEndpoint {
         String query = "";
         try (Connection connection = dataSource.getConnection()) {
             boolean usedUnion = true;
-            query = "SELECT * FROM user_data WHERE last_name = '" + accountName + "'";
+            //query = "SELECT * FROM user_data WHERE last_name = '" + accountName + "'";
+            query = "SELECT * FROM user_data WHERE last_name = '?'";
+
             //Check if Union is used
             if (!accountName.matches("(?i)(^[^-/*;)]*)(\\s*)UNION(.*$)")) {
                 usedUnion = false;
             }
             try (Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
                     ResultSet.CONCUR_READ_ONLY)) {
-                ResultSet results = statement.executeQuery(query);
+                
+                PreparedStatement pstmt = connection.prepareStatement( query );
+                pstmt.setString( 1, accountName );
+                ResultSet results = pstmt.getResultSet();                
+                //ResultSet results = statement.executeQuery(query);
 
                 if ((results != null) && (results.first())) {
                     ResultSetMetaData resultsMetaData = results.getMetaData();
@@ -86,7 +92,7 @@ public class SqlInjectionLesson6a extends AssignmentEndpoint {
                         return trackProgress(failed().output(output.toString() + "<br> Your query was: " + query).build());
                     }
                 } else {
-                    return trackProgress(failed().feedback("sql-injection.advanced.6a.no.results").output(" Your query was: " + query).build());
+                    return trackProgress(failed().feedback("sql-injection.advanced.6a.no.results").output("* Your query was: " + query).build());
                 }
             } catch (SQLException sqle) {
                 return trackProgress(failed().output(sqle.getMessage() + "<br> Your query was: " + query).build());
